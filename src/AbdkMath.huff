@@ -1,0 +1,151 @@
+/// @title Math
+/// @notice SPDX-License-Identifier: MIT
+/// @author yash <https://github.com/0xpanicError>
+/// @notice Math module for signed 64x64 bit fixed point numbers
+/// @notice Adapted from ABDK (https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol)
+
+#define constant MIN = 0x80000000000000000000000000000000
+#define constant MAX = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+
+#define constant COMPILER_PANIC = 0x00
+#define constant ASSERT_FALSE = 0x01
+#define constant ARITHMETIC_OVERFLOW = 0x11
+#define constant DIVIDE_BY_ZERO = 0x12
+#define constant INVALID_ENUM_VALUE = 0x21
+#define constant INVALID_STORAGE_BYTE_ARRAY = 0x22
+#define constant EMPTY_ARRAY_POP = 0x31
+#define constant ARRAY_OUT_OF_BOUNDS = 0x32
+#define constant MEMORY_TOO_LARGE = 0x41
+#define constant UNINITIALIZED_FUNCTION_POINTER = 0x51
+
+#define error Error(string)
+#define error Panic(uint256)
+
+#define macro FROM_INT() = takes (1) returns (1) {
+    // Input Stack                 // [int256 x]
+    CHECK_RANGE()                  // [x] reverts if not in range 
+    0x40                           // [64, x]
+    shl                            // [x << 64]                          
+}
+
+#define macro TO_INT() = takes (1) returns (1) {
+    // Input Stack                 // [int128 x]
+    0x40                           // [64, x]
+    shr                            // [x >> 64]
+}
+
+#define macro FROM_UINT() = takes (1) returns (1) {
+    // Input Stack                 // [uint256 x]
+    [MAX]                          // [MAX, x]
+    dup2                           // [x, MAX, x]
+    LT_EQ()                        // [x <= MAX, x]
+    ASSERT()                       // [x] reverts if x is not in range
+    0x40                           // [64, x]
+    shl                            // [x << 64]
+}
+
+#define macro TO_UINT() = takes (1) returns (1) {
+    // Input Stack                 // [int128 x]
+    0x00                           // [0, x]
+    dup2                           // [x, 0, x]
+    GT_EQ()                        // [x]
+    0x40                           // [64, x]
+    shr                            // [x >> 64]
+}
+
+#define macro FROM_128x128() = takes (1) returns (1) {
+    // Input Stack                 // [int256 x]
+    0x40                           // [64, x]
+    shl                            // [x >> 64]
+    CHECK_RANGE()                  // [x >> 64] reverts if not in range
+}
+
+#define macro TO_128x128() = takes (1) returns (1) {
+    // Input Stack                 // [int128 x]
+    TO_INT()                       // [int256 x << 64]
+}
+
+#define macro ADD() = takes (2) returns (1) {
+    // Input Stack                 // [x, y]
+    add                            // [x + y]
+    CHECK_RANGE()                  // [x + y] reverts if not in range 
+}
+
+#define macro SUB() = takes (2) returns (1) {
+    // Input Stack                 // [x, y]
+    sub                            // [x - y]
+    CHECK_RANGE()                  // [x - y] reverts if not in range 
+}
+
+#define macro MUL() = takes (2) returns (1) {
+    // Input Stack                 // [int128 x, int128 y]
+    mul                            // [x * y]
+    0x80                           // [128, x * y]
+    shl                            // [x * y << 128] ignoring first 128 bits
+    0x40                           // [64, int128 (x * y)]
+    shr                            // [x * y >> 64] scaled back to 64x64
+    CHECK_RANGE()                  // [x * y >> 64] reverts if not in range 
+}
+
+#define macro DIV() = takes (2) returns (1) {
+    // Input Stack                 // [x, y]
+    dup2                           // [y, x, y]
+    iszero                         // [y == 0 , x, y]
+    ASSERT()                       // [x, y] reverts if y = 0
+    0x40                           // [64, x, y]
+    shl                            // [x << 64, y]
+    sdiv                           // [x << 64 / y]
+    CHECK_RANGE()                  // [x << 64 / y] reverts if not in range 
+}
+
+#define macro GT_EQ() = takes (2) returns (1) {
+    // Input Stack                 // [num1, num2]
+    dup2 dup2                      // [num1, num2, num1, num2]
+    sgt                            // [num1 > num2, num1, num2]
+    swap2                          // [num2, num2, num1 > num2]
+    eq                             // [num2 == num2, num1 > num2]
+    or                             // [num2 == num2 && num1 > num2]
+}
+
+#define macro LT_EQ() = takes (2) returns (1) {
+    // Input Stack                 // [num1, num2]
+    dup2 dup2                      // [num1, num2, num1, num2]
+    slt                            // [num1 < num2, num1, num2]
+    swap2                          // [num2, num2, num1 < num2]
+    eq                             // [num2 == num2, num1 < num2]
+    or                             // [num2 == num2 && num1 < num2]
+}
+
+#define macro CHECK_RANGE() = takes (1) returns (1) {
+    // Input Stack                 // [x]
+    [MIN]                          // [MIN, x]
+    dup2                           // [x, MIN, x]
+    GT_EQ()                        // [x >= MIN, x]
+    [MAX]                          // [MAX, x >= MIN, x]
+    dup3                           // [x, MAX, x >= MIN, x]
+    LT_EQ()                        // [x <= MAX, x >= MIN, x]
+    and                            // [x <= MAX && x >= MIN, x]
+    ASSERT()                       // [x] reverts if x is not in range 
+}
+
+#define macro ASSERT() = takes (1) returns (0) {
+    // takes:               // [condition]
+    do_not_panic            // [do_not_panic_jumpdest, condition]
+    jumpi                   // []
+    [ASSERT_FALSE]          // [assert_false]
+    PANIC()                 // []
+    do_not_panic:           // []
+}
+
+#define macro PANIC() = takes (1) returns (0) {
+    // takes:       // [panic_code]
+    __ERROR(Panic)  // [panic_sig, panic_code]
+    0x00            // [panic_sig_offset, panic_sig, panic_code]
+    mstore          // [panic_code]
+    0x04            // [panic_code_offset, panic_code]
+    mstore          // []
+    0x24            // [revert_size]
+    0x00            // [revert_offset, revert_size]
+    revert          // []
+}
+
