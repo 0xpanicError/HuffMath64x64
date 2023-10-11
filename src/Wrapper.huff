@@ -4,6 +4,11 @@
 /* Interface */
 #define function addNumbers(uint256,uint256,uint256,uint256) nonpayable returns (uint256,uint256)
 #define function fromInt(int256) nonpayable returns (int128)
+#define function toInt(int128) nonpayable returns (int64)
+#define function fromUint(uint256) nonpayable returns (int128)
+#define function toUint(int128) nonpayable returns (uint64)
+#define function from128x128(int256) nonpayable returns (int128)
+#define function to128x128(int128) nonpayable returns (int256)
 
 #define macro ADD_WRAPPER() = takes (4) returns (2) {
     0x04 calldataload    // [num1]
@@ -23,6 +28,41 @@
     0x20 0x00 return
 }
 
+#define macro TO_INT_WRAPPER() = takes (1) returns (1) {
+    0x04 calldataload
+    TO_INT()
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro FROM_UINT_WRAPPER() = takes (1) returns (1) {
+    0x04 calldataload
+    FROM_UINT()
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro TO_UINT_WRAPPER() = takes (1) returns (1) {
+    0x04 calldataload
+    TO_UINT()
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro FROM_128x128_WRAPPER() = takes (1) returns (1) {
+    0x04 calldataload
+    FROM_128x128()
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro TO_128x128_WRAPPER() = takes (1) returns (1) {
+    0x04 calldataload
+    TO_128x128()
+    0x00 mstore
+    0x20 0x00 return
+}
+
 
 #define macro MAIN() = takes (0) returns (0) {
     // Identify which function is being called.
@@ -32,14 +72,34 @@
     0xe0 shr
 
     // Jump table
-    dup1 __FUNC_SIG(addNumbers) eq  addNumbers      jumpi
-    dup1 __FUNC_SIG(fromInt)    eq  fromInt         jumpi
+    dup1 __FUNC_SIG(addNumbers)    eq  addNumbers      jumpi
+    dup1 __FUNC_SIG(fromInt)       eq  fromInt         jumpi
+    dup1 __FUNC_SIG(toInt)         eq  toInt           jumpi
+    dup1 __FUNC_SIG(fromUint)      eq  fromUint        jumpi
+    dup1 __FUNC_SIG(toUint)        eq  toUint          jumpi
+    dup1 __FUNC_SIG(from128x128)   eq  fromUint        jumpi
+    dup1 __FUNC_SIG(to128x128)     eq  toUint          jumpi
     0x00 0x00 revert
 
     addNumbers:
-        ADD_WRAPPER()
+       ADD_WRAPPER()
 
     fromInt:
        FROM_INT_WRAPPER()
+
+    toInt:
+       TO_INT_WRAPPER()
+
+    fromUint:
+       FROM_UINT_WRAPPER()
+
+    toUint:
+       TO_UINT_WRAPPER()
+
+    from128x128:
+       FROM_128x128_WRAPPER()
+
+    to128x128:
+       TO_128x128_WRAPPER()
 
 }

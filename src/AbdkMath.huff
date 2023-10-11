@@ -100,7 +100,8 @@
 
 #define macro GT_EQ() = takes (2) returns (1) {
     // Input Stack                 // [num1, num2]
-    dup2 dup2                      // [num1, num2, num1, num2]
+    dup2 0x80 shl                  // [num2 << 128, num1, num2]
+    dup2 0x80 shl                  // [num1 << 128, num2 << 128, num1, num2]
     sgt                            // [num1 > num2, num1, num2]
     swap2                          // [num2, num2, num1 > num2]
     eq                             // [num2 == num2, num1 > num2]
@@ -109,7 +110,8 @@
 
 #define macro LT_EQ() = takes (2) returns (1) {
     // Input Stack                 // [num1, num2]
-    dup2 dup2                      // [num1, num2, num1, num2]
+    dup2 0x80 shl                  // [num2 << 128, num1, num2]
+    dup2 0x80 shl                  // [num1 << 128, num2 << 128, num1, num2]
     slt                            // [num1 < num2, num1, num2]
     swap2                          // [num2, num2, num1 < num2]
     eq                             // [num2 == num2, num1 < num2]

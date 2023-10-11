@@ -13,6 +13,8 @@ interface IMath {
     ) external view returns (uint256, uint256);
 
     function fromInt(int256) external pure returns (int128);
+
+    function toInt(int128) external pure returns (int64);
 }
 
 contract MathTest is Test {
@@ -35,14 +37,21 @@ contract MathTest is Test {
         assertEq(im, 88);
     }
 
-    // function testFromInt() public {
-    //     console2.log(MAX);
-    //     int128 result = math.fromInt(int256(5));
-    //     console2.log(MAX);
-    //     int256 a = 5;
-    //     a = int128(a << 64);
-    //     assertEq(result, a);
-    // }
+    function testFromInt() public {
+        console2.log(MAX);
+        int128 result = math.fromInt(int256(-5));
+        console2.log(MAX);
+        int256 a = -5;
+        a = int128(a << 64);
+        assertEq(result, a);
+    }
+
+    function testToInt() public {
+        int128 b = 5;
+        int64 result = math.toInt(int128(b << 64));
+        int64 a = 5;
+        assertEq(result, a);
+    }
 
     // function testAddNumbers_fuzz(uint256 a, uint256 b) public {
     //     unchecked {

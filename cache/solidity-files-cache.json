@@ -505,8 +505,8 @@
       }
     },
     "test/SimpleStore.t.sol": {
-      "lastModificationDate": 1696974733682,
-      "contentHash": "6aef11eb59aa03be24e8219abdc64992",
+      "lastModificationDate": 1696983265859,
+      "contentHash": "a677a62326c451e561092a4cce17252d",
       "sourceName": "test/SimpleStore.t.sol",
       "solcConfig": {
         "settings": {
